@@ -10,14 +10,14 @@ from numpy import *	# Для функции arange(), функция подде�
 Fd = 200.0 					# Частота дискретизации аналогового несущего сигнала
 Fdd = 500.0 				# Частота дискретизации цифрового исходного сигнала
 Fc = 20.0 					# Частота несущей
-N = 30						# Количество передающихся символов
+N = 30 						# Количество передающихся символов
 speed = 10.0 				# Символьная скорость (частота символов)
-duration = 1 / speed		# Длительность импульса
-time_signal = N * duration	# Длительность исходного сигнала из N импульсов
+duration = 1 / speed 		# Длительность импульса
+time_signal = N * duration 	# Длительность исходного сигнала из N импульсов
 M = 2 						# Количество уровней модуляции
 
 # Формируем исходную последовательность символов
-source_sequence = [random.randint(0, M) for x in range(0, N)]
+source_sequence = [random.randint(0, 2) for x in range(0, N)]
 
 Wc = 2 * math.pi * Fc  		#Угловая частота несущей
 
@@ -26,18 +26,62 @@ source_signal = []
 for x in range(0, N):
 	source_signal += [source_sequence[x] for y in arange(0, duration, (1.0 / Fdd))]
 
+#################  Сжатие  #####################
+
+#################  Кодирование  #####################
+# Хемминг 8,4,4 с дополнительным битом проверки на четность
+# Надо разбить на блоки по 4 разряда, если не хватает, то дополнить 1-ми
+print len(source_sequence)/4
+
+# Дополняем еденицами, что бы можно было разделить на блоки по 4 бита
+a=[]
+for x in xrange(len(source_sequence) - 4 * (len(source_sequence) / 4)):
+	source_sequence += [1]
+
+def Hamming(source_sequence):
+	code_sequence = [((source_sequence[0] + source_sequence[1]) % 2 + source_sequence[3]) % 2, 	# c0
+	                 ((source_sequence[0] + source_sequence[2]) % 2 + source_sequence[3]) % 2, 	# c1
+	                 source_sequence[0], 														# a0
+	                 ((source_sequence[1] + source_sequence[2]) % 2 + source_sequence[3]) % 2, 	# c2
+	                 source_sequence[1], 														# a1
+	                 source_sequence[2], 														# a2
+	                 source_sequence[3]]														# а3
+	# Бит проверки четности
+	count = 0
+	for x in xrange(7):
+		if code_sequence[x] == 1:
+			count += 1
+
+	if count % 2 == 0:
+		code_sequence += [0]
+	else:
+		code_sequence += [1]
+
+	return code_sequence
+
+for x in xrange(len(source_sequence)/4):
+	Hamming(source_sequence[(x * 4): ((x + 1) * 4)])
+#################  Модулятор  #####################
+
 # Формируем список значений модулированного сигнала
 ASK = []
 for x in xrange(0, N):
-	ASK += [source_sequence[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / Fd))]
+	ASK += [2*source_sequence[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / Fd))]
 
+# Формируем шум
+noise = []
+for x in xrange(0, N):
+	noise += [random.uniform(-1.0, 1.0) for x in arange(0, duration, (1.0 / Fd))]
+
+# Зашумляем сигнал
+noise_ASK = [(noise[x] + ASK[x])/2 for x in xrange(N * int(duration * Fd))]
 
 
 #################  Демодулятор  #####################
 # Выпрямитель, что бы среднее значение сигнала за длительность одного импульса отличалась от 0
 rectified_ASK = []
 for x in xrange(len(ASK)):
-	rectified_ASK += [abs(ASK[x])] 
+	rectified_ASK += [abs(noise_ASK[x])] 
 
 
 
@@ -52,19 +96,25 @@ for x in xrange(0, N):
 	for y in xrange(x*20, (x+1)*20):
 		temp += rectified_ASK[y]
 
-	if temp / (duration * Fd) > 0:
+	if (temp / (duration * Fd) - 0.4) > 0: # 0,35 - порог детектирования
 		receive_sequence += [1]
 	else:
 		receive_sequence += [0]
-
 	temp = 0
 
 print "Исходная последовательность  ",source_sequence
 print "Полученная последовательность",receive_sequence
 
+error = 0
+for x in xrange(len(receive_sequence)):
+	if receive_sequence[x] != source_sequence[x]:
+		error += 1
+if error != 0:
+	print "Найдено ", error, " ошибок"
+else:
+	print "Ошибок нет"
 
-
-#################  Определение функции построения графиков  #####################
+#################  Определени е функции построения графиков  #####################
 
 def plot_signal(x, y, title, labelx, labley, position):
 	pylab.subplot(4, 1, position)
@@ -76,7 +126,7 @@ def plot_signal(x, y, title, labelx, labley, position):
 
 
 plot_signal(arange(0, time_signal, (1.0 / Fdd)), source_signal, 'Digital sequence', 'time', '', 1)
-plot_signal(arange(0, time_signal, (1.0 / Fd)), ASK, 'ASK', 'time', '', 2)
+plot_signal(arange(0, time_signal, (1.0 / Fd)), noise_ASK, 'ASK', 'time', '', 2)
 plot_signal(arange(0, time_signal, (1.0 / Fd)), rectified_ASK, 'rectified_ASK', 'time', '', 3)
 # Отображение графиков
-pylab.show()
+#pylab.show()
