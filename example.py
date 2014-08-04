@@ -30,11 +30,8 @@ def Coder_Hamming(source_sequence):
 #################   Декодер   #####################
 def Decoder_Hamming(code):
 	c0 = ((code[2] + code[4]) % 2 + code[6]) % 2
-	#print 'C0 ', c0
 	c1 = ((code[2] + code[5]) % 2 + code[6]) % 2
-	#print 'C1 ', c1
 	c2 = ((code[4] + code[5]) % 2 + code[6]) % 2
-	#print 'C2 ', c2
 
 	# Для определения позиции искаженного символа суммируем веса искаженных проверочных символов
 	w1 = w2 = w3 = 0
@@ -79,23 +76,26 @@ for x in range(0, N):
 #################  Сжатие  #####################
 
 #################  Кодирование  #####################
-# Хемминг 8,4,4 с дополнительным битом проверки на четность
+# Хемминг 7,4,3
 # Надо разбить на блоки по 4 разряда, если не хватает, то дополнить 1-ми
 
 # Дополняем еденицами, что бы можно было разделить на блоки по 4 бита
 for x in xrange(len(source_sequence) - 4 * (len(source_sequence) / 4)):
 	source_sequence += [1]
-
+# Кодируем
 code_signal=[]
 for x in xrange(len(source_sequence)/4):
 	code_signal += Coder_Hamming(source_sequence[(x * 4): ((x + 1) * 4)])
 
-#################  Модулятор  #####################
 
+
+
+#################  Модулятор  #####################
 # Формируем список значений модулированного сигнала
 ASK = []
 for x in xrange(0, len(code_signal)):
 	ASK += [1.25*code_signal[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / Fd))]
+
 # Формируем шум
 noise = []
 for x in xrange(0, len(code_signal)):
@@ -103,8 +103,6 @@ for x in xrange(0, len(code_signal)):
 
 # Зашумляем сигнал
 noise_ASK = [(noise[x] + ASK[x])/2 for x in xrange(len(code_signal) * int(duration * Fd))]
-
-
 
 
 
@@ -118,14 +116,13 @@ for x in xrange(len(ASK)):
 receive_sequence = []
 temp = 0
 # Считаем среднеарифметическое значение сигнала за время длительности одного импульса
-# Если значение больше 0 - приняли 1
 # РАБОТАЕТ ТОЛЬКО В ИДЕАЛЬНОМ СЛУЧАЕ
 for x in xrange(0, len(code_signal)):
 
 	for y in xrange(x*20, (x+1)*20):
 		temp += rectified_ASK[y]
 
-	if (temp / (duration * Fd) - 0.3) > 0: # 0,35 - порог детектирования
+	if (temp / (duration * Fd) - 0.3) > 0: # 0,3 - порог детектирования
 		receive_sequence += [1]
 	else:
 		receive_sequence += [0]
@@ -152,7 +149,7 @@ else:
 #################  Определени е функции построения графиков  #####################
 
 def plot_signal(x, y, title, labelx, labley, position):
-	pylab.subplot(4, 1, position)
+	pylab.subplot(7, 1, position)
 	pylab.plot(x, y)
 	pylab.title(title)
 	pylab.xlabel(labelx)
@@ -160,7 +157,13 @@ def plot_signal(x, y, title, labelx, labley, position):
 	pylab.grid(True)
 
 plot_signal(arange(0, time_signal, (1.0 / Fdd)), source_signal, 'Digital sequence', 'time', '', 1)
-plot_signal(arange(0, 56 * duration, (1.0 / Fd)), noise_ASK, 'ASK', 'time', '', 2)
-plot_signal(arange(0, 56 * duration, (1.0 / Fd)), rectified_ASK, 'rectified_ASK', 'time', '', 3)
+plot_signal(arange(0, 56 * duration, (1.0 / Fd)), noise_ASK, 'ASK', 'time', '', 3)
+plot_signal(arange(0, 56 * duration, (1.0 / Fd)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
+
+decode_signal = []
+for x in range(0, len(decode_code)):
+	decode_signal += [decode_code[x] for y in arange(0, duration, (1.0 / Fdd))]
+
+plot_signal(arange(0, len(decode_code) * duration, (1.0 / Fdd)), decode_signal, 'Decode sequence', 'time', '', 7)
 # Отображение графиков
-#pylab.show()
+pylab.show()
