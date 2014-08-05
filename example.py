@@ -2,6 +2,7 @@
 
 import pylab  # Для графиков
 from numpy import * 
+from Sender import *
 
 # ################  Определение функции построения графиков  #####################
 
@@ -48,11 +49,11 @@ def coder_hamming(code):
     """
     encoded_sequence = [((code[0] + code[1]) % 2 + code[3]) % 2,  # c0
                         ((code[0] + code[2]) % 2 + code[3]) % 2,  # c1
-                        code[0],  # a0
+                          code[0],                                # a0
                         ((code[1] + code[2]) % 2 + code[3]) % 2,  # c2
-                        code[1],  # a1
-                        code[2],  # a2
-                        code[3]]  # а3
+                          code[1],                                # a1
+                          code[2],                                # a2
+                          code[3]]                                # а3
     return encoded_sequence
 
 ###########################    Декодер   ###########################
@@ -101,24 +102,7 @@ def decoder_hamming(count, code):
     return [code[2], code[4], code[5], code[6]]
 
 
-##########################################################
-#
-#          Входные данные
-#
-##########################################################
 
-FD = 200.0                  # Частота дискретизации аналогового несущего сигнала
-FDD = 500.0                 # Частота дискретизации цифрового исходного сигнала
-FC = 10.0                   # Частота несущей
-N = 32                      # Количество передающихся символов
-SPEED = 10.0                # Символьная скорость (частота символов)
-duration = 1 / SPEED        # Длительность импульса
-time_signal = N * duration  # Длительность исходного сигнала из N импульсов
-Wc = 2 * math.pi * FC       # Угловая частота несущей
-A_NOISE = 1                 # Амплитуда шума
-A_SIGNAL = 1.25             # Амплитуда сигнала
-DETECTION_THRESHOLD = 0.3   # Порог детектирования
-HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
 
 
 ##########################################################
@@ -127,57 +111,63 @@ HAMMING_LENGTH = 7          # Длина последовательности п
 #
 ##########################################################
 
-# Формируем исходную последовательность символов
-source_sequence = [random.randint(0, 2) for x in range(0, N)]
+# # Формируем исходную последовательность символов
+# source_sequence = [random.randint(0, 2) for x in range(0, N)]
 
-# Формируем список значений исходного сигнала
-source_signal = []
-for x in range(0, N):
-    source_signal += [source_sequence[x] for y in arange(0, duration, (1.0 / FDD))]
-
-
-##########################################################
-#
-#          Кодирование
-#
-##########################################################
-# Хемминг(7,4,3)
-# Исходную последовательность символов надо разбить на блоки по 4 разряда, 
-# если разрядов не хватает, то нужно дополнить последовательность 1-ми
-
-# Проверяем длину последовательности и дополняем единицами если необходимо
-if len(source_sequence) % 4 != 0:
-    for x in xrange(len(source_sequence) - 4 * (len(source_sequence) / 4)):
-        source_sequence += [1]
-
-# Кодируем
-code_signal = []
-for x in xrange(len(source_sequence) / 4):
-    # На вход функции передаем блоки по 4 символа
-    code_signal += coder_hamming(source_sequence[(x * 4): ((x + 1) * 4)])
+# # Формируем список значений исходного сигнала
+# source_signal = []
+# for x in range(0, N):
+#     source_signal += [source_sequence[x] for y in arange(0, duration, (1.0 / FDD))]
 
 
-##########################################################
-#
-#          Модулятор
-#
-##########################################################
-# Формируем список значений модулированного сигнала
-ASK = []
-for x in xrange(0, len(code_signal)):
-    ASK += [A_SIGNAL * code_signal[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / FD))]
+# ##########################################################
+# #
+# #          Кодирование
+# #
+# ##########################################################
+# # Хемминг(7,4,3)
+# # Исходную последовательность символов надо разбить на блоки по 4 разряда, 
+# # если разрядов не хватает, то нужно дополнить последовательность 1-ми
 
-# Формируем шум
-noise = []
-for x in xrange(0, len(code_signal)):
-    noise += [A_NOISE * random.uniform(-1.0, 1.0) for x in arange(0, duration, (1.0 / FD))]
+# # Проверяем длину последовательности и дополняем единицами если необходимо
+# if len(source_sequence) % 4 != 0:
+#     for x in xrange(len(source_sequence) - 4 * (len(source_sequence) / 4)):
+#         source_sequence += [1]
 
-# Зашумляем сигнал
-# Наложение шума предстовляет собой формирование списка среднеарифметических значений сигнала
-# и шума в дискреты времени
-noise_ASK = [(noise[x] + ASK[x]) / 2 for x in xrange(len(code_signal) * int(duration * FD))]
+# # Кодируем
+# code_signal = []
+# for x in xrange(len(source_sequence) / 4):
+#     # На вход функции передаем блоки по 4 символа
+#     code_signal += coder_hamming(source_sequence[(x * 4): ((x + 1) * 4)])
 
 
+# ##########################################################
+# #
+# #          Модулятор
+# #
+# ##########################################################
+# # Формируем список значений модулированного сигнала
+# ASK = []
+# for x in xrange(0, len(code_signal)):
+#     ASK += [A_SIGNAL * code_signal[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / FD))]
+
+# # Формируем шум
+# noise = []
+# for x in xrange(0, len(code_signal)):
+#     noise += [A_NOISE * random.uniform(-1.0, 1.0) for x in arange(0, duration, (1.0 / FD))]
+
+# # Зашумляем сигнал
+# # Наложение шума предстовляет собой формирование списка среднеарифметических значений сигнала
+# # и шума в дискреты времени
+# noise_ASK = [(noise[x] + ASK[x])/2 for x in xrange(len(code_signal) * int(duration * FD))]
+sender_obj = Sender()
+
+sender_obj.generate_signal()
+sender_obj.encode_signal()
+sender_obj.genetare_noise()
+sender_obj.modulate_signal()
+noise_ASK = sender_obj.noise_ASK
+code_signal = sender_obj.encoded_signal
 ##########################################################
 #
 #          Демодулятор
@@ -185,7 +175,7 @@ noise_ASK = [(noise[x] + ASK[x]) / 2 for x in xrange(len(code_signal) * int(dura
 ##########################################################
 # Выпрямитель, что бы среднее значение сигнала за длительность одного импульса отличалась от 0
 rectified_ASK = []
-for x in xrange(len(ASK)):
+for x in xrange(len(noise_ASK)):
     rectified_ASK += [abs(noise_ASK[x])]
 
 # Детектор
@@ -199,7 +189,6 @@ for x in xrange(0, len(code_signal)):
     for y in xrange(x * len(rectified_ASK) / len(code_signal),
                     (x + 1) * len(rectified_ASK) / len(code_signal)):
         temp += rectified_ASK[y]
-
     # Сравниваем среднеарифметическое значение сигнала с порогом детектирования
     if (temp / (duration * FD) - DETECTION_THRESHOLD) > 0:
         receive_sequence += [1]
@@ -246,8 +235,8 @@ else:
 #
 ##########################################################
 plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)
-plot_signal(arange(0, 56 * duration, (1.0 / FD)), noise_ASK, 'ASK', 'time', '', 3)
-plot_signal(arange(0, 56 * duration, (1.0 / FD)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
+plot_signal(arange(0, len(code_signal) * duration, (1.0 / FD)), noise_ASK, 'ASK', 'time', '', 3)
+plot_signal(arange(0, len(receive_sequence) * duration, (1.0 / FD)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
 
 decode_signal = []
 for x in range(0, len(decode_code)):
