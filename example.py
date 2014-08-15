@@ -1,12 +1,11 @@
 # -*- coding:utf-8 -*-
+from PyQt4 import QtCore, QtGui
+import sys
 
 from Sender import *
 from Receiver import *
 from Plot import *
 from form import *
-
-from PyQt4 import QtCore, QtGui
-import sys
 
 class MainWindowClass(QtGui.QMainWindow):
     
@@ -14,46 +13,55 @@ class MainWindowClass(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.connect(self.ui.pushButton, QtCore.SIGNAL('clicked()'),self.test)
-        
-        self.FD = 0                     # Частота дискретизации аналогового несущего сигнала
-        self.FDD = 0                    # Частота дискретизации цифрового исходного сигнала
-        self.FC = 0                     # Частота несущей
-        self.N = 0                      # Количество передающихся символов
-        self.SPEED = 0                  # Символьная скорость (частота символов)
-        self.A_NOISE = 0                # Амплитуда шума
-        self.A_SIGNAL = 0               # Амплитуда сигнала
-        self.DETECTION_THRESHOLD = 0    # Порог детектирования
-        self.HAMMING_LENGTH = 7         # Длина последовательности после кодирования по Хеммингу(7,4,3)
+
+        # Сигналы и слоты
+        self.connect(self.ui.CONDUCT_EXPERIMENT, QtCore.SIGNAL('clicked()'),self.conduct_experiment) # Проведение эксперимента
+        self.connect(self.ui.PLOT_GRAPH, QtCore.SIGNAL('clicked()'),self.plot_graph)                 # Построение графиков
     
-    def conduct_experiment(count):
+    def conduct_experiment(self):
         ##########################################################
         #
         #          Входные данные
         #
         ##########################################################
+        # Проводим инициализацию открытых атрибутов-данных класса данными из формы
         self.FD = 200.0                                                 
         self.FDD = 500.0                                                
         self.FC = self.ui.FC.text()                                     
         self.N = self.ui.N.text()                                       
         self.SPEED = self.ui.SPEED.text()                               
-        self.duration = 1 / SPEED                                       # Длительность импульса
-        self.time_signal = N * duration                                 # Длительность исходного сигнала из N импульсов
-        self.Wc = 2 * math.pi * FC                                      # Угловая частота несущей
+        self.duration = 1 / SPEED                # Длительность импульса
+        self.time_signal = N * duration          # Длительность исходного сигнала из N импульсов
         self.A_NOISE = self.ui.A_NOISE.text()                           
         self.A_SIGNAL = self.ui.A_SIGNAL.text()                         
-        self.DETECTION_THRESHOLD = self.ui.DETECTION_THRESHOLD.value    
+        self.DETECTION_THRESHOLD = self.ui.DETECTION_THRESHOLD.value()    
         
-        self.error = []
+        # Локальные переменные
+        count = self.ui.EXPER_COUNT.value()
+        bit_error = []                          # В списке храниться апостериорной вероятность битовой ошибки при каждом эксперименте
+
+        # Проводим эксперимент <count> раз и вичисляем апостериорной вероятность битовой ошибки при каждом эксперименте
         for x in xrange(count):
+            
             # Конструируем объекты приемника и передатчика
+            sender_obj = Sender(self.FD,
+                                self.FDD,
+                                self.FC,
+                                self.N,
+                                self.SPEED,
+                                self.A_NOISE,
+                                self.A_SIGNAL)
+
+            receiver_obj = Receiver(self.FD,
+                                    self.N,
+                                    self.SPEED,
+                                    self.DETECTION_THRESHOLD)
 
             ##########################################################
             #
             #          Передатчик
             #
             ##########################################################
-            sender_obj = Sender()
             sender_obj.generate_signal()
             sender_obj.encode_signal()
             sender_obj.genetare_noise()
@@ -66,7 +74,6 @@ class MainWindowClass(QtGui.QMainWindow):
             #          Приемник
             #
             ##########################################################
-            receiver_obj = Receiver(len(code_signal))
             receiver_obj.demodulate_signal(noise_ASK)
             receiver_obj.decode_signal()
 
@@ -75,16 +82,33 @@ class MainWindowClass(QtGui.QMainWindow):
             #     Сравниваем декодированную последовательность и исходную
             #
             ##########################################################
-            error = 0
-            for x in xrange(len(receiver_obj.decode_code)):
-                if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
-                    error += 1
-            if error != 0:
-                print "\n   Found ", error, " error(s)\n"
-            else:
-                print "\n   Not found any error or all errors were corrected\n"
+        
+        error = 0
+        for x in xrange(len(receiver_obj.decode_code)):
+            if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
+                error += 1
+        
+        # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте
+        if error != 0:
+            bit_error.append(error/len(receiver_obj.decode_code)) 
+        else:
+            bit_error.append(0)
+
+        # Вычисление мат. ожидания вероятности появления битовой ошибки
+        expected_value = 0
+        for x in xrange(count):
+            expected_value += bit_error[x]
+        expected_value /= count
+        self.ui.EXPECTED_VALUE.setText(str(expected_value))
+
+        # Вычисление дисперсии вероятности появления битовой ошибки
+        temp = 0
+        for x in xrange(count):
+            temp += bit_error[x] ** 2
+        dispersion = (temp - temp / count) / (count - 1)
+        self.ui.DISPERSION.setText(str(dispersion))
     
-    def plot():
+    def plot_graph(self):
         plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)
         plot_signal(arange(0, len(code_signal) * duration, (1.0 / FD)), noise_ASK, 'ASK', 'time', '', 3)
         plot_signal(arange(0, len(receive_sequence) * duration, (1.0 / FD)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
@@ -103,7 +127,7 @@ class MainWindowClass(QtGui.QMainWindow):
         self.ui.label_9.setText(self.FC)
 
 
-app = QtGui.QApplication(sys.argv)
-windows = MainWindowClass()
-windows.show()
+app = QtGui.QApplication(sys.argv) # Cоздать основной объект приложения
+windows = MainWindowClass()        # Создать объект класса MainWindowClass()
+windows.show()                     # Показать главное окно приложения
 sys.exit(app.exec_())

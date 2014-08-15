@@ -2,28 +2,21 @@
 import pylab  # Для графиков
 from numpy import * 
 
-FD = 200.0                  # Частота дискретизации аналогового несущего сигнала
-FDD = 500.0                 # Частота дискретизации цифрового исходного сигнала
-FC = 10.0                   # Частота несущей
-N = 32                      # Количество передающихся символов
-SPEED = 10.0                # Символьная скорость (частота символов)
-duration = 1 / SPEED        # Длительность импульса
-time_signal = N * duration  # Длительность исходного сигнала из N импульсов
-Wc = 2 * math.pi * FC       # Угловая частота несущей
-A_NOISE = 1                 # Амплитуда шума
-A_SIGNAL = 1.25             # Амплитуда сигнала
-DETECTION_THRESHOLD = 0.3   # Порог детектирования
-HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
-
 class Receiver(object):
     """Класс имитирует приемник и реализует атрибуты-методы,
     которые существуют в реальной системе"""
-    def __init__(self, length_):
-        super(Receiver, self).__init__()
+    def __init__(self, FD_, N_, SPEED_, DETECTION_THRESHOLD_):
         self.rectified_ASK = []
         self.receive_sequence = []
-        self.encoded_signal_length = length_ 
         self.decode_code = []
+
+        self.FD = FD_                  # Частота дискретизации аналогового несущего сигнала
+        self.SPEED = SPEED_                # Символьная скорость (частота символов)
+        self.DETECTION_THRESHOLD = DETECTION_THRESHOLD_   # Порог детектирования
+        
+        self.encoded_signal_length = HAMMING_LENGTH * N_ / 4
+        self.duration = 1 / self.SPEED        # Длительность импульса
+        self.HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
 
     ###########################    Декодер   ###########################
     def _decoder_hamming(self, count, code):
