@@ -5,7 +5,7 @@ from numpy import *
 class Receiver(object):
     """Класс имитирует приемник и реализует атрибуты-методы,
     которые существуют в реальной системе"""
-    def __init__(self, FD_, N_, SPEED_, DETECTION_THRESHOLD_):
+    def __init__(self, FD_, N_, SPEED_, DETECTION_THRESHOLD_, file_descriptor_):
         self.HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
         self.rectified_ASK = []
         self.receive_sequence = []
@@ -17,6 +17,8 @@ class Receiver(object):
         
         self.encoded_signal_length = self.HAMMING_LENGTH * N_ / 4
         self.duration = 1 / self.SPEED        # Длительность импульса
+
+        self.file = file_descriptor_;
         
 
     ###########################    Декодер   ###########################
@@ -57,6 +59,7 @@ class Receiver(object):
             # 
             # Нумерация элементов в списке начинается с 0, вычитаем 1
             syndrome = w1 + w2 + w3 - 1
+            self.file.write("\n   Block #" + str(count) + ": Error in " + str(syndrome) + " bit")
             print "Block", count, ": Error in", syndrome, "bit"
 
             # Заменяем ошибочный символ на противоположный

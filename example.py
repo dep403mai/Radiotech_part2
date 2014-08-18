@@ -17,8 +17,11 @@ class MainWindowClass(QtGui.QMainWindow):
         # Сигналы и слоты
         self.connect(self.ui.CONDUCT_EXPERIMENT, QtCore.SIGNAL('clicked()'),self.conduct_experiment) # Проведение эксперимента
         self.connect(self.ui.PLOT_GRAPH, QtCore.SIGNAL('clicked()'),self.plot_graph)                 # Построение графиков
+
+        self.file = open("log.txt", 'w')
     
     def conduct_experiment(self):
+        self.file.write("\n\n============ Новый эксперимент ===========")
         ##########################################################
         #
         #          Входные данные
@@ -43,6 +46,7 @@ class MainWindowClass(QtGui.QMainWindow):
 
         # Проводим эксперимент <count> раз и вичисляем апостериорной вероятность битовой ошибки при каждом эксперименте
         for x in xrange(count):
+            self.file.write("\nЭксперимент #"+str(x))
             
             # Конструируем объекты приемника и передатчика
             sender_obj = Sender(self.FD,
@@ -56,7 +60,8 @@ class MainWindowClass(QtGui.QMainWindow):
             receiver_obj = Receiver(self.FD,
                                     self.N,
                                     self.SPEED,
-                                    self.DETECTION_THRESHOLD)
+                                    self.DETECTION_THRESHOLD,
+                                    self.file)
 
             ##########################################################
             #
@@ -100,6 +105,7 @@ class MainWindowClass(QtGui.QMainWindow):
             expected_value += bit_error[x]
         expected_value /= float(count)
         self.ui.EXPECTED_VALUE.setText(str(expected_value))
+        self.file.write("\n\nМат. ожидание: " + str(expected_value))
 
         # Вычисление дисперсии вероятности появления битовой ошибки
         temp = 0.0
@@ -107,6 +113,7 @@ class MainWindowClass(QtGui.QMainWindow):
             temp += bit_error[x] ** 2
         dispersion = (temp - temp / count) / (count - 1)
         self.ui.DISPERSION.setText(str(dispersion))
+        self.file.write("\nДисперсия:      " + str(dispersion))
     
     def plot_graph(self):
         plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)
