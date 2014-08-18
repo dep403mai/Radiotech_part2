@@ -8,7 +8,6 @@ from Plot import *
 from form import *
 
 class MainWindowClass(QtGui.QMainWindow):
-    
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
@@ -18,10 +17,15 @@ class MainWindowClass(QtGui.QMainWindow):
         self.connect(self.ui.CONDUCT_EXPERIMENT, QtCore.SIGNAL('clicked()'),self.conduct_experiment) # Проведение эксперимента
         self.connect(self.ui.PLOT_GRAPH, QtCore.SIGNAL('clicked()'),self.plot_graph)                 # Построение графиков
 
+        # Дескриптор файла, в котором храниться лог
         self.file = open("log.txt", 'w')
+
+    def __del__(self):
+    	self.file.close()
     
     def conduct_experiment(self):
         self.file.write("\n\n============ Новый эксперимент ===========")
+        print "\n\n============ Новый эксперимент ==========="
         
         # Входные данные
         # Проводим инициализацию открытых атрибутов-данных класса данными из формы
@@ -43,7 +47,8 @@ class MainWindowClass(QtGui.QMainWindow):
 
         # Проводим эксперимент <count> раз и вичисляем апостериорной вероятность битовой ошибки при каждом эксперименте
         for x in xrange(count):
-            self.file.write("\nЭксперимент #"+str(x))
+            self.file.write("\n\nЭксперимент #" + str(x))
+            print "\nЭксперимент #", x
             
             # Конструируем объекты приемника и передатчика
             sender_obj = Sender(self.FD,
@@ -76,10 +81,16 @@ class MainWindowClass(QtGui.QMainWindow):
             for x in xrange(len(receiver_obj.decode_code)):
                 if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
                     error += 1
-            
+            print "Decode sequence: ", receiver_obj.decode_code
+            self.file.write("\nDecode sequence: " + str(receiver_obj.decode_code))
+            print "Source sequence: ", sender_obj.source_sequence
+            self.file.write("\nSource sequence: " + str(sender_obj.source_sequence))
+
             # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте
             if error != 0:
-                bit_error.append(error/len(receiver_obj.decode_code)) 
+                bit_error.append(error/len(receiver_obj.decode_code))
+                print "Sequences are not matched"
+                self.file.write("\nSequences are not matched")
             else:
                 bit_error.append(0)
 
@@ -97,7 +108,7 @@ class MainWindowClass(QtGui.QMainWindow):
             temp += bit_error[x] ** 2
         dispersion = (temp - temp / count) / (count - 1)
         self.ui.DISPERSION.setText(str(dispersion))
-        self.file.write("\nДисперсия:      " + str(dispersion))
+        self.file.write("\nДисперсия:     " + str(dispersion))
     
     def plot_graph(self): # !!!ТУТ НАДО ВСЕ ПЕРЕДЕЛАТЬ!!!
         plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)

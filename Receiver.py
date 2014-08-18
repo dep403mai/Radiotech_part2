@@ -60,11 +60,10 @@ class Receiver(object):
             # Нумерация элементов в списке начинается с 0, вычитаем 1
             syndrome = w1 + w2 + w3 - 1
             self.file.write("\n   Block #" + str(count) + ": Error in " + str(syndrome) + " bit")
-            print "Block", count, ": Error in", syndrome, "bit"
+            print "    Block", count, ": Error in", syndrome, "bit"
 
             # Заменяем ошибочный символ на противоположный
             code[syndrome] ^= code[syndrome]
-
         return [code[2], code[4], code[5], code[6]]
 
     def demodulate_signal(self, signal):
@@ -91,6 +90,9 @@ class Receiver(object):
             temp = 0
 
     def decode_signal(self):
+        print "Decoding..."
+        self.file.write("\nDecoding...")
         for x in xrange(len(self.receive_sequence) / self.HAMMING_LENGTH):
             self.decode_code += self._decoder_hamming(x, self.receive_sequence[(x * self.HAMMING_LENGTH): ((x + 1) * self.HAMMING_LENGTH)])
-
+        print "Done"
+        self.file.write("\nDone")
