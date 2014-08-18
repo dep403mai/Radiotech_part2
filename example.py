@@ -22,11 +22,8 @@ class MainWindowClass(QtGui.QMainWindow):
     
     def conduct_experiment(self):
         self.file.write("\n\n============ Новый эксперимент ===========")
-        ##########################################################
-        #
-        #          Входные данные
-        #
-        ##########################################################
+        
+        # Входные данные
         # Проводим инициализацию открытых атрибутов-данных класса данными из формы
         # Все данные из формы в формате Qstring переводим в питоновский string, а затем в float
         self.FD = 200.0                                                 
@@ -62,12 +59,7 @@ class MainWindowClass(QtGui.QMainWindow):
                                     self.SPEED,
                                     self.DETECTION_THRESHOLD,
                                     self.file)
-
-            ##########################################################
-            #
-            #          Передатчик
-            #
-            ##########################################################
+            # Передатчик
             sender_obj.generate_signal()
             sender_obj.encode_signal()
             sender_obj.genetare_noise()
@@ -75,19 +67,11 @@ class MainWindowClass(QtGui.QMainWindow):
             noise_ASK = sender_obj.noise_ASK
             code_signal = sender_obj.encoded_signal
 
-            ##########################################################
-            #
-            #          Приемник
-            #
-            ##########################################################
+            # Приемник
             receiver_obj.demodulate_signal(noise_ASK)
             receiver_obj.decode_signal()
 
-            ##########################################################
-            #
-            #     Сравниваем декодированную последовательность и исходную
-            #
-            ##########################################################
+            # Сравниваем декодированную последовательность и исходную
             error = 0.0
             for x in xrange(len(receiver_obj.decode_code)):
                 if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
@@ -115,7 +99,7 @@ class MainWindowClass(QtGui.QMainWindow):
         self.ui.DISPERSION.setText(str(dispersion))
         self.file.write("\nДисперсия:      " + str(dispersion))
     
-    def plot_graph(self):
+    def plot_graph(self): # !!!ТУТ НАДО ВСЕ ПЕРЕДЕЛАТЬ!!!
         plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)
         plot_signal(arange(0, len(code_signal) * duration, (1.0 / FD)), noise_ASK, 'ASK', 'time', '', 3)
         plot_signal(arange(0, len(receive_sequence) * duration, (1.0 / FD)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
