@@ -57,12 +57,12 @@ class Sender(object):
     
     def generate_signal(self):
         # Формируем исходную последовательность символов
-        self.source_sequence = [random.randint(0, 2) for x in range(0, N)]
+        self.source_sequence = [random.randint(0, 2) for x in range(0, self.N)]
 
         # Формируем список значений исходного сигнала
         self.source_signal = []
-        for x in range(0, N):
-            self.source_signal += [self.source_sequence[x] for y in arange(0, duration, (1.0 / FDD))]
+        for x in range(0, self.N):
+            self.source_signal += [self.source_sequence[x] for y in arange(0, self.duration, (1.0 / self.FDD))]
 
     def encode_signal(self):
         # 
@@ -85,14 +85,14 @@ class Sender(object):
     def genetare_noise(self):
         # Формируем шум
         for x in xrange(0, len(self.encoded_signal)):
-            self.noise += [A_NOISE * random.uniform(-1.0, 1.0) for x in arange(0, duration, (1.0 / FD))]
+            self.noise += [self.A_NOISE * random.uniform(-1.0, 1.0) for x in arange(0, self.duration, (1.0 / self.FD))]
 
     def modulate_signal(self):
         # Формируем список значений модулированного сигнала
         for x in xrange(0, len(self.encoded_signal)):
-            self.ASK += [A_SIGNAL * self.encoded_signal[x] * math.sin(Wc * t) for t in arange(0, duration, (1.0 / FD))]
+            self.ASK += [self.A_SIGNAL * self.encoded_signal[x] * math.sin(self.Wc * t) for t in arange(0, self.duration, (1.0 / self.FD))]
 
         # Зашумляем сигнал
         # Наложение шума предстовляет собой формирование списка среднеарифметических значений сигнала
         # и шума в дискреты времени
-        self.noise_ASK = [(self.noise[x] + self.ASK[x]) / 2 for x in xrange(len(self.encoded_signal) * int(duration * FD))]
+        self.noise_ASK = [(self.noise[x] + self.ASK[x]) / 2 for x in xrange(len(self.encoded_signal) * int(self.duration * self.FD))]

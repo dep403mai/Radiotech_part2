@@ -25,16 +25,17 @@ class MainWindowClass(QtGui.QMainWindow):
         #
         ##########################################################
         # Проводим инициализацию открытых атрибутов-данных класса данными из формы
+        # Все данные из формы в формате Qstring переводим в питоновский string, а затем в float
         self.FD = 200.0                                                 
         self.FDD = 500.0                                                
-        self.FC = self.ui.FC.text()                                     
-        self.N = self.ui.N.text()                                       
-        self.SPEED = self.ui.SPEED.text()                               
-        self.duration = 1 / SPEED                # Длительность импульса
-        self.time_signal = N * duration          # Длительность исходного сигнала из N импульсов
-        self.A_NOISE = self.ui.A_NOISE.text()                           
-        self.A_SIGNAL = self.ui.A_SIGNAL.text()                         
-        self.DETECTION_THRESHOLD = self.ui.DETECTION_THRESHOLD.value()    
+        self.FC = int(str(self.ui.FC.text()))                                     
+        self.N = int(str(self.ui.N.text()))                                       
+        self.SPEED = float(str(self.ui.SPEED.text()))
+        self.duration = 1 / self.SPEED           # Длительность импульса
+        self.time_signal = self.N * self.duration          # Длительность исходного сигнала из N импульсов
+        self.A_NOISE = float(str(self.ui.A_NOISE.text()))                           
+        self.A_SIGNAL = float(str(self.ui.A_SIGNAL.text()))                         
+        self.DETECTION_THRESHOLD = float(str(self.ui.DETECTION_THRESHOLD.value()))    
         
         # Локальные переменные
         count = self.ui.EXPER_COUNT.value()
@@ -82,27 +83,26 @@ class MainWindowClass(QtGui.QMainWindow):
             #     Сравниваем декодированную последовательность и исходную
             #
             ##########################################################
-        
-        error = 0
-        for x in xrange(len(receiver_obj.decode_code)):
-            if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
-                error += 1
-        
-        # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте
-        if error != 0:
-            bit_error.append(error/len(receiver_obj.decode_code)) 
-        else:
-            bit_error.append(0)
+            error = 0.0
+            for x in xrange(len(receiver_obj.decode_code)):
+                if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
+                    error += 1
+            
+            # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте
+            if error != 0:
+                bit_error.append(error/len(receiver_obj.decode_code)) 
+            else:
+                bit_error.append(0)
 
         # Вычисление мат. ожидания вероятности появления битовой ошибки
-        expected_value = 0
+        expected_value = 0.0
         for x in xrange(count):
             expected_value += bit_error[x]
-        expected_value /= count
+        expected_value /= float(count)
         self.ui.EXPECTED_VALUE.setText(str(expected_value))
 
         # Вычисление дисперсии вероятности появления битовой ошибки
-        temp = 0
+        temp = 0.0
         for x in xrange(count):
             temp += bit_error[x] ** 2
         dispersion = (temp - temp / count) / (count - 1)

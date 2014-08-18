@@ -6,6 +6,7 @@ class Receiver(object):
     """Класс имитирует приемник и реализует атрибуты-методы,
     которые существуют в реальной системе"""
     def __init__(self, FD_, N_, SPEED_, DETECTION_THRESHOLD_):
+        self.HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
         self.rectified_ASK = []
         self.receive_sequence = []
         self.decode_code = []
@@ -14,9 +15,9 @@ class Receiver(object):
         self.SPEED = SPEED_                # Символьная скорость (частота символов)
         self.DETECTION_THRESHOLD = DETECTION_THRESHOLD_   # Порог детектирования
         
-        self.encoded_signal_length = HAMMING_LENGTH * N_ / 4
+        self.encoded_signal_length = self.HAMMING_LENGTH * N_ / 4
         self.duration = 1 / self.SPEED        # Длительность импульса
-        self.HAMMING_LENGTH = 7          # Длина последовательности после кодирования по Хеммингу(7,4,3)
+        
 
     ###########################    Декодер   ###########################
     def _decoder_hamming(self, count, code):
@@ -80,13 +81,13 @@ class Receiver(object):
                 
                 temp += self.rectified_ASK[y]
             # Сравниваем среднеарифметическое значение сигнала с порогом детектирования
-            if (temp / (duration * FD) - DETECTION_THRESHOLD) > 0:
+            if (temp / (self.duration * self.FD) - self.DETECTION_THRESHOLD) > 0:
                 self.receive_sequence += [1]
             else:
                 self.receive_sequence += [0]
             temp = 0
 
     def decode_signal(self):
-        for x in xrange(len(self.receive_sequence) / HAMMING_LENGTH):
-            self.decode_code += self._decoder_hamming(x, self.receive_sequence[(x * HAMMING_LENGTH): ((x + 1) * HAMMING_LENGTH)])
+        for x in xrange(len(self.receive_sequence) / self.HAMMING_LENGTH):
+            self.decode_code += self._decoder_hamming(x, self.receive_sequence[(x * self.HAMMING_LENGTH): ((x + 1) * self.HAMMING_LENGTH)])
 
