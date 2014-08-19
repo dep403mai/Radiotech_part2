@@ -8,6 +8,13 @@ from Plot import *
 from form import *
 
 class MainWindowClass(QtGui.QMainWindow):
+    """Класс главного окна программы. 
+    Наследуется от QMainWindow, содержит в себе класс 
+    интерфейса Ui_MainWindow. Класс Ui_MainWindow сгенерирован
+    при помощи команды <pyuic4> из файла form.ui. Описание формы form.ui
+    сгенерировано через Designer, идущего в составе PyQt4
+
+    """
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
         self.ui = Ui_MainWindow()
@@ -24,6 +31,11 @@ class MainWindowClass(QtGui.QMainWindow):
     	self.file.close()
     
     def conduct_experiment(self):
+        """Провести эксперимент по имитации приемо-передачи. 
+        Эксперимент проводится count раз, затем вычисляется
+        мат.ожидание и дисперсия битовой ошибки
+
+        """
         self.file.write("\n\n============ Новый эксперимент ===========")
         print "\n\n============ Новый эксперимент ==========="
         
@@ -35,14 +47,14 @@ class MainWindowClass(QtGui.QMainWindow):
         self.FC = int(str(self.ui.FC.text()))                                     
         self.N = int(str(self.ui.N.text()))                                       
         self.SPEED = float(str(self.ui.SPEED.text()))
-        self.duration = 1 / self.SPEED           # Длительность импульса
-        self.time_signal = self.N * self.duration          # Длительность исходного сигнала из N импульсов
+        self.duration = 1 / self.SPEED                          # Длительность импульса
+        self.time_signal = self.N * self.duration               # Длительность исходного сигнала из <N импульсов
         self.A_NOISE = float(str(self.ui.A_NOISE.text()))                           
         self.A_SIGNAL = float(str(self.ui.A_SIGNAL.text()))                         
         self.DETECTION_THRESHOLD = float(str(self.ui.DETECTION_THRESHOLD.value()))    
         
         # Локальные переменные
-        count = self.ui.EXPER_COUNT.value()
+        count = self.ui.EXPER_COUNT.value()     # Необходимое количество экспериментов
         bit_error = []                          # В списке храниться апостериорной вероятность битовой ошибки при каждом эксперименте
 
         # Проводим эксперимент <count> раз и вичисляем апостериорной вероятность битовой ошибки при каждом эксперименте
@@ -64,29 +76,33 @@ class MainWindowClass(QtGui.QMainWindow):
                                     self.SPEED,
                                     self.DETECTION_THRESHOLD,
                                     self.file)
-            # Передатчик
+            # Имитируем передатчик
             sender_obj.generate_signal()
             sender_obj.encode_signal()
             sender_obj.genetare_noise()
             sender_obj.modulate_signal()
-            noise_ASK = sender_obj.noise_ASK
             code_signal = sender_obj.encoded_signal
 
-            # Приемник
-            receiver_obj.demodulate_signal(noise_ASK)
+            # Имитируем приемник
+            receiver_obj.demodulate_signal(sender_obj.noise_ASK)
             receiver_obj.decode_signal()
 
-            # Сравниваем декодированную последовательность и исходную
-            error = 0.0
+            # Сравниваем декодированную последовательность и исходную.
+            # Считаем количество ошибочных битов
+            error = 0.0 # Количество ошибочных битов
             for x in xrange(len(receiver_obj.decode_code)):
                 if receiver_obj.decode_code[x] != sender_obj.source_sequence[x]:
                     error += 1
+            
             print "Decode sequence: ", receiver_obj.decode_code
             self.file.write("\nDecode sequence: " + str(receiver_obj.decode_code))
             print "Source sequence: ", sender_obj.source_sequence
             self.file.write("\nSource sequence: " + str(sender_obj.source_sequence))
 
-            # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте
+            # Вычисление апостериорной вероятности появления битовой ошибки в эксперименте.
+            # Вычисляется как отношение количества ошибочных битов к длине последовательности.
+            # Вычисленная вероятноть заноситься в список <bit_error> при каждом эксперименте 
+            # для формирования выборки
             if error != 0:
                 bit_error.append(error/len(receiver_obj.decode_code))
                 print "Sequences are not matched"
@@ -95,25 +111,39 @@ class MainWindowClass(QtGui.QMainWindow):
                 bit_error.append(0)
 
         # Вычисление мат. ожидания вероятности появления битовой ошибки
-        expected_value = 0.0
+        # Считаем как среднеарифметическое значение
+        expected_value = 0.0    # Мат.ожидание
         for x in xrange(count):
             expected_value += bit_error[x]
         expected_value /= float(count)
+
         self.ui.EXPECTED_VALUE.setText(str(expected_value))
         self.file.write("\n\nМат. ожидание: " + str(expected_value))
 
         # Вычисление дисперсии вероятности появления битовой ошибки
-        temp = 0.0
+        # Дисперсия вычисляется по формуле: (sum(Xi^2) - sum(Xi)^2 / n) / n - 1
+        sum_of_squares = 0.0 
         for x in xrange(count):
-            temp += bit_error[x] ** 2
-        dispersion = (temp - temp / count) / (count - 1)
+            sum_of_squares += bit_error[x] ** 2
+
+        square_of_the_sum = 0.0
+        for x in xrange(count):
+            square_of_the_sum += bit_error[x]
+        square_of_the_sum *= square_of_the_sum
+
+        dispersion = (sum_of_squares - square_of_the_sum / count) / (count - 1)
+
         self.ui.DISPERSION.setText(str(dispersion))
         self.file.write("\nДисперсия:     " + str(dispersion))
     
     def plot_graph(self): # !!!ТУТ НАДО ВСЕ ПЕРЕДЕЛАТЬ!!!
-        plot_signal(arange(0, time_signal, (1.0 / FDD)), source_signal, 'Digital sequence', 'time', '', 1)
+        """Построить графики
+
+        """
+        # plot_signal(x, y, title, labelx, labley, position)
+        plot_signal(arange(0, self.time_signal, (1.0 / self.FDD)), source_signal, 'Random source sequence', 'time', '', 1)
         plot_signal(arange(0, len(code_signal) * duration, (1.0 / FD)), noise_ASK, 'ASK', 'time', '', 3)
-        plot_signal(arange(0, len(receive_sequence) * duration, (1.0 / FD)), rectified_ASK, 'rectified_ASK', 'time', '', 5)
+        plot_signal(arange(0, len(receive_sequence) * duration, (1.0 / FD)), rectified_ASK, 'Rectified ASK', 'time', '', 5)
 
         decode_signal = []
         for x in range(0, len(decode_code)):
@@ -123,11 +153,6 @@ class MainWindowClass(QtGui.QMainWindow):
 
         # Отображение графиков
         pylab.show()
-
-    
-    def test(self):
-        self.ui.label_9.setText(self.FC)
-
 
 app = QtGui.QApplication(sys.argv) # Cоздать основной объект приложения
 windows = MainWindowClass()        # Создать объект класса MainWindowClass()
