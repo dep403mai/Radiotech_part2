@@ -4,9 +4,9 @@ import sys
 
 from Sender import *
 from Receiver import *
+
 from Plot import *
 from Form import *
-
 class MainWindowClass(QtGui.QMainWindow):
     """Класс главного окна программы. 
     Наследуется от QMainWindow, содержит в себе класс 
