@@ -1,0 +1,1 @@
+pyuic4 Form.ui >> Form.py

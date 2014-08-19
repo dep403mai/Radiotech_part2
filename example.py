@@ -5,7 +5,7 @@ import sys
 from Sender import *
 from Receiver import *
 from Plot import *
-from form import *
+from Form import *
 
 class MainWindowClass(QtGui.QMainWindow):
     """Класс главного окна программы. 
@@ -42,8 +42,8 @@ class MainWindowClass(QtGui.QMainWindow):
         # Входные данные
         # Проводим инициализацию открытых атрибутов-данных класса данными из формы
         # Все данные из формы в формате Qstring переводим в питоновский string, а затем в float
-        self.FD = 200.0                                         # Частота дискретизации аналогового несущего сигнала         
-        self.FDD = 500.0                                        # Частота дискретизации цифрового исходного сигнала         
+        self.FD = int(str(self.ui.FD.text()))                   # Частота дискретизации аналогового несущего сигнала         
+        self.FDD = int(str(self.ui.FDD.text()))                 # Частота дискретизации цифрового исходного сигнала         
         self.FC = int(str(self.ui.FC.text()))                   # Частота несущей                   
         self.N = int(str(self.ui.N.text()))                     # Количество передающихся символов                   
         self.SPEED = float(str(self.ui.SPEED.text()))           # Символьная скорость (частота символов)
@@ -141,7 +141,7 @@ class MainWindowClass(QtGui.QMainWindow):
         """Построить графики
 
         """
-        # plot_signal(x, y, title, labelx, labley, position)
+        # plot_signal(x, y, title, (list)labelx, (list)labley, position)
         plot_signal(arange(0, self.time_signal, (1.0 / self.FDD)), self.sender_obj.source_signal, 'Random source sequence', 'time', '', 1)
         plot_signal(arange(0, len(self.sender_obj.encoded_signal) * self.duration, (1.0 / self.FD)), self.sender_obj.noise_ASK, 'Noised ASK', 'time', '', 3)
         plot_signal(arange(0, len(self.receiver_obj.receive_sequence) * self.duration, (1.0 / self.FD)), self.receiver_obj.rectified_ASK, 'Rectified ASK', 'time', '', 5)
