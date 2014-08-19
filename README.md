@@ -28,6 +28,7 @@ Radiotech_part2
 ----------
 
 Пример работы программы
+
 ![alt-текст](https://github.com/dep403mai/Radiotech_part2/blob/master/ScreenshotMainWindow.png "Пример работы программы")
 
 Пример построения графиков
