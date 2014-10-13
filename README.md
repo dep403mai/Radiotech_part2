@@ -3,6 +3,12 @@ Radiotech_part2
 
 Репозиторий второго семестра курса радиотехники.
 
+Задание
+-------
+Текст задания находится в репозитории [Radiotech_book], pdf доступен по [ссылке]
+[Radiotech_book]:https://github.com/dep403mai/Radiotech_book
+[ссылке]:https://github.com/dep403mai/Radiotech_book/raw/master/Radiotech.pdf
+
 Общие сведения
 --------------
 
